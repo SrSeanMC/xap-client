@@ -49,6 +49,13 @@ public:
         canvas->AddHexagonFilled(p1, p2, p3, p4, p5, p6, col);
     }
 
+    static void DrawBox(ImDrawList* canvas,const Vector2D& foot, const Vector2D& head,const ImColor& color, float thickness)
+    {
+    	float height = head.y - foot.y;
+    	float width = height / 2.0f;
+    	canvas->AddRect(ImVec2(foot.x - (width / 2), foot.y), ImVec2(head.x + (width/2), head.y+(height*0.2)), color, 0.0f, 0, thickness);  	
+    }
+
     static void DrawSeer(ImDrawList* Canvas, float x, float y, int shield, int max_shield, int health) {
         int bg_offset = 3;
         int bar_width = 158;

@@ -47,6 +47,84 @@ struct Sense {
     float GameFOV = 120;
 
     bool ShowSpectators = true;
+
+    bool DrawBox = true;
+ 
+bool Skelton = true;
+float SkeltonThickness = 1.5f;
+ 
+if (DrawBox)
+	    	{
+	    		    
+		        Vector2D Head,Foot;
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Head), Head);	        
+		        GameCamera->WorldToScreen(p->LocalOrigin.Add(Vector3D(0, 0, 0)), Foot);
+		        if (p->IsLockedOn) 
+		        {
+		        	Renderer::DrawBox(Canvas, Foot, Head, ImColor(255,0,0), 2);
+		        } else if (!p->IsLockedOn)  Renderer::DrawBox(Canvas, Foot, Head, ImColor(255, 255, 255), 2);
+		        
+		      
+		       
+            }
+if (Skelton)
+	    	{	
+			 ImColor SkeltonColor;
+			 SkeltonColor = ImColor(255, 255, 255);
+	    		
+	    		if (p->IsLockedOn) 
+		        {
+		    	 SkeltonColor = ImColor(255, 0, 0);
+		        } 
+	    		
+	    		Vector2D Head,Neck,UpperChest,LowerChest,Stomach,Leftshoulder,Leftelbow,LeftHand,Rightshoulder,RightelbowBone,RightHand,LeftThighs,Leftknees,Leftleg,RightThighs,Rightknees,Rightleg;
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Head), Head);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Neck), Neck);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::UpperChest), UpperChest);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::LowerChest), LowerChest);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Stomach), Stomach);
+		        
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftshoulder), Leftshoulder);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftelbow), Leftelbow);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::LeftHand), LeftHand);
+		        
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Rightshoulder), Rightshoulder);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::RightelbowBone), RightelbowBone);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::RightHand), RightHand);
+		        
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::LeftThighs), LeftThighs);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftknees), Leftknees);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftleg), Leftleg);
+		        
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::RightThighs), RightThighs);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Rightknees), Rightknees);
+		        GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Rightleg), Rightleg);
+		
+		       
+		        //Renderer::DrawCircle(Canvas, Head, 10.0f, 0, SkeltonColor, SkeltonThickness);
+		        
+	    		Renderer::DrawLine(Canvas, Head, Neck, SkeltonThickness, SkeltonColor);
+	     		Renderer::DrawLine(Canvas, Neck, UpperChest, SkeltonThickness, SkeltonColor);
+	      		Renderer::DrawLine(Canvas, UpperChest, LowerChest, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, LowerChest, Stomach, SkeltonThickness, SkeltonColor);
+		        
+		        Renderer::DrawLine(Canvas, Neck, Leftshoulder, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, Leftshoulder, Leftelbow, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, Leftelbow, LeftHand, SkeltonThickness, SkeltonColor);
+		        
+		        Renderer::DrawLine(Canvas, Neck, Rightshoulder, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, Rightshoulder, RightelbowBone, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, RightelbowBone, RightHand, SkeltonThickness, SkeltonColor);
+		        
+		        Renderer::DrawLine(Canvas, Stomach, LeftThighs, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, LeftThighs, Leftknees, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, Leftknees, Leftleg, SkeltonThickness, SkeltonColor);
+		        
+		        Renderer::DrawLine(Canvas, Stomach, RightThighs, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, RightThighs, Rightknees, SkeltonThickness, SkeltonColor);
+		        Renderer::DrawLine(Canvas, Rightknees, Rightleg, SkeltonThickness, SkeltonColor);
+		     
+	    	}
     
     // Variables
     Camera* GameCamera;

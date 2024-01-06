@@ -49,6 +49,7 @@ public:
         canvas->AddHexagonFilled(p1, p2, p3, p4, p5, p6, col);
     }
 
+    //DrawBox
     static void DrawBox(ImDrawList* canvas,const Vector2D& foot, const Vector2D& head,const ImColor& color, float thickness)
     {
     	float height = head.y - foot.y;

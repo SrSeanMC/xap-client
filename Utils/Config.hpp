@@ -47,6 +47,10 @@ namespace Config {
         bool ShowSpectators = true;
         bool DrawFOVCircle = true;
         float GameFOV = 120;
+        bool DrawBox = true;
+        bool Skelton = true;
+        float ESPMaxDistance = 200;
+        bool ShowNear = true;
     };
 
     namespace Triggerbot {

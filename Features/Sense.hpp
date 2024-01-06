@@ -48,12 +48,15 @@ struct Sense {
 
     bool ShowSpectators = true;
 
+    // ESP
     bool DrawBox = true;
- 
-bool Skelton = true;
-float SkeltonThickness = 1.5f;
- 
-if (DrawBox)
+    bool Skelton = true;
+    float SkeltonThickness = 1.5f;
+    float ESPMaxDistance = 200;
+    // END ESP
+    bool ShowNear = true;
+
+    if (DrawBox)
 	    	{
 	    		    
 		        Vector2D Head,Foot;
@@ -63,11 +66,9 @@ if (DrawBox)
 		        {
 		        	Renderer::DrawBox(Canvas, Foot, Head, ImColor(255,0,0), 2);
 		        } else if (!p->IsLockedOn)  Renderer::DrawBox(Canvas, Foot, Head, ImColor(255, 255, 255), 2);
-		        
-		      
-		       
-            }
-if (Skelton)
+		}
+
+    if (Skelton)
 	    	{	
 			 ImColor SkeltonColor;
 			 SkeltonColor = ImColor(255, 255, 255);
@@ -122,8 +123,7 @@ if (Skelton)
 		        
 		        Renderer::DrawLine(Canvas, Stomach, RightThighs, SkeltonThickness, SkeltonColor);
 		        Renderer::DrawLine(Canvas, RightThighs, Rightknees, SkeltonThickness, SkeltonColor);
-		        Renderer::DrawLine(Canvas, Rightknees, Rightleg, SkeltonThickness, SkeltonColor);
-		     
+		        Renderer::DrawLine(Canvas, Rightknees, Rightleg, SkeltonThickness, SkeltonColor);	     
 	    	}
     
     // Variables
@@ -155,6 +155,25 @@ if (Skelton)
                 ImGui::SetTooltip("Only those in range will glow");
 
             ImGui::Separator();
+
+	    // DrawBox
+            ImGui::Checkbox("Draw box", &DrawBox);
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Drawbox on enemy");
+            ImGui::SameLine();
+            // DrawSkelton
+            ImGui::Checkbox("Draw Skelton", &Skelton);
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Skelton on enemy");
+           ImGui::SliderFloat("Max Distance ESP", &ESPMaxDistance, 0, 1000, "%.0f");
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Only those in range will ESP");
+            //Show Count Enemy Near"
+            ImGui::Checkbox("Show Count Enemy Near", &ShowNear);
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Show Count Enemy Near");
+
+	    ImGui::Separator();
 
             // Drawings
             ImGui::Checkbox("Draw Tracer##ESP", &DrawTracers);
@@ -205,6 +224,10 @@ if (Skelton)
             Config::Sense::ShowSpectators = ShowSpectators;
             Config::Sense::DrawFOVCircle = DrawFOVCircle;
             Config::Sense::GameFOV = GameFOV;
+	    Config::Sense::DrawBox = DrawBox;
+            Config::Sense::Skelton = Skelton;
+            Config::Sense::ESPMaxDistance = ESPMaxDistance;
+            Config::Sense::ShowNear = ShowNear;
             return true;
         } catch (...) {
             return false;
@@ -228,100 +251,206 @@ if (Skelton)
         StoredGlowMode->push_back(FourthStyle);
     }
 
-    void RenderDrawings(ImDrawList* Canvas, Aimbot* AimAssistState, LocalPlayer* Myself, Overlay OverlayWindow) {
+    void RenderDrawings(ImDrawList *Canvas, Aimbot *AimAssistState, LocalPlayer *Myself, Overlay OverlayWindow)
+    {
         int ScreenWidth;
         int ScreenHeight;
         OverlayWindow.GetScreenResolution(ScreenWidth, ScreenHeight);
-
-        if (ShowSpectators) {
+ 
+        if (ShowSpectators)
+        {
             ImVec2 Center = ImGui::GetMainViewport()->GetCenter();
             ImGui::SetNextWindowPos(ImVec2(0.0f, Center.y), ImGuiCond_Once, ImVec2(0.02f, 0.5f));
             ImGui::SetNextWindowBgAlpha(0.3f);
-            ImGui::Begin("Spectators", nullptr, ImGuiWindowFlags_AlwaysAutoResize | 
-                ImGuiWindowFlags_NoTitleBar |
-                ImGuiWindowFlags_NoSavedSettings | 
-                ImGuiWindowFlags_NoMove | 
-                ImGuiWindowFlags_NoInputs | 
-                ImGuiWindowFlags_NoCollapse |
-                ImGuiWindowFlags_NoScrollbar);
-
+            ImGui::Begin("Spectators", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+ 
             std::chrono::milliseconds Now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-            if (Now >= LastUpdateTime + std::chrono::milliseconds(1500)) {
+            if (Now >= LastUpdateTime + std::chrono::milliseconds(1500))
+            {
                 int TempTotalSpectators = 0;
                 std::vector<std::string> TempSpectators;
-
-                for (int i = 0; i < Players->size(); i++) {
-                    Player* p = Players->at(i);
-                    if (p->BasePointer == Myself->BasePointer) continue;
-                    if (p->GetViewYaw() == Myself->ViewYaw && p->IsDead) {
+ 
+                for (int i = 0; i < Players->size(); i++)
+                {
+                    Player *p = Players->at(i);
+                    if (p->BasePointer == Myself->BasePointer)
+                        continue;
+                    if (p->GetViewYaw() == Myself->ViewYaw && p->IsDead)
+                    {
                         TempTotalSpectators++;
                         TempSpectators.push_back(p->GetPlayerName());
                     }
                 }
-
+ 
                 TotalSpectators = TempTotalSpectators;
                 Spectators = TempSpectators;
                 LastUpdateTime = Now;
             }
             ImGui::Text("Spectators: ");
-            ImGui::SameLine(); ImGui::TextColored(TotalSpectators > 0 ? ImVec4(1, 0.343, 0.475, 1) : ImVec4(0.4, 1, 0.343, 1), "%d", TotalSpectators);
-            if (static_cast<int>(Spectators.size()) > 0) {
+            ImGui::SameLine();
+            ImGui::TextColored(TotalSpectators > 0 ? ImVec4(1, 0.343, 0.475, 1) : ImVec4(0.4, 1, 0.343, 1), "%d", TotalSpectators);
+            if (static_cast<int>(Spectators.size()) > 0)
+            {
                 ImGui::Separator();
-                for (int i = 0; i < static_cast<int>(Spectators.size()); i++) {
+                for (int i = 0; i < static_cast<int>(Spectators.size()); i++)
+                {
                     ImGui::TextColored(ImVec4(1, 0.343, 0.475, 1), "> %s", Spectators.at(i).c_str());
                 }
             }
             ImGui::End();
         }
-
+ 
         // Draw FOV Circle
-        if (DrawFOVCircle && Myself->IsCombatReady()) {
+        if (DrawFOVCircle && Myself->IsCombatReady())
+        {
             float FOV = std::min(AimAssistState->FOV, AimAssistState->FOV * (AimAssistState->GetFOVScale() * AimAssistState->ZoomScale));
             float Radius = tanf(DEG2RAD(FOV) / 2) / tanf(DEG2RAD(GameFOV) / 2) * ScreenWidth;
             Renderer::DrawCircle(Canvas, Vector2D(ScreenWidth / 2, ScreenHeight / 2), Radius, 40, ImColor(255, 255, 255), 2);
         }
-
+ 
         // Draw lot of things
-        for (int i = 0; i < Players->size(); i++) {
-            Player* p = Players->at(i);
-            if (!p->IsCombatReady() || !p->IsVisible || !p->IsHostile || p->DistanceToLocalPlayer > (Conversion::ToGameUnits(SeerMaxDistance)) || Myself->BasePointer == p->BasePointer) continue;
-
-            // Tracer
-            if (DrawTracers) {
-                Vector2D chestScreenPosition;
-                GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::UpperChest), chestScreenPosition);
-                if (!chestScreenPosition.IsZeroVector()) {
-                    int x = (int)(ScreenWidth * 0.5f);
-                    Renderer::DrawLine(Canvas, Vector2D(x, ScreenHeight), chestScreenPosition, 1.5f, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                    Renderer::DrawCircleFilled(Canvas, chestScreenPosition, 2, 10, ImColor(255, 255, 255));
+        int PlayersNear = 0;
+        for (int i = 0; i < Players->size(); i++)
+        {
+            Player *p = Players->at(i);
+            if (p->IsCombatReady() && p->IsHostile && p->DistanceToLocalPlayer < (Conversion::ToGameUnits(ESPMaxDistance)))
+            {
+                PlayersNear++;
+                if (DrawTracers)
+                {
+                    Vector2D chestScreenPosition;
+                    GameCamera->WorldToScreen(p->LocalOrigin.Add(Vector3D(0, 0, 0)), chestScreenPosition);
+                    if (!chestScreenPosition.IsZeroVector())
+                    {
+                        int x = (int)(ScreenWidth * 0.5f);
+                        Renderer::DrawLine(Canvas, Vector2D(x, ScreenHeight), chestScreenPosition, 1.5f, ImVec4(1.0f, 1.0f, 1.0f, 0.7f));
+                        Renderer::DrawCircleFilled(Canvas, chestScreenPosition, 2, 10, ImColor(255, 255, 255));
+                    }
+                }
+                // Distance
+                if (DrawDistance)
+                {
+                    Vector2D originScreenPosition;
+                    GameCamera->WorldToScreen(p->LocalOrigin.Add(Vector3D(0, 0, -4)), originScreenPosition);
+                    if (!originScreenPosition.IsZeroVector())
+                    {
+                        Renderer::DrawText(Canvas, originScreenPosition.Add(Vector2D(0, 0)), std::to_string((int)Conversion::ToMeters(p->DistanceToLocalPlayer)).c_str(), ImColor(255, 255, 255), true, true, false);
+                    }
+                }
+ 
+                // DrawBox
+                if (DrawBox && p->DistanceToLocalPlayer < (Conversion::ToGameUnits(ESPMaxDistance / 2)))
+                {
+ 
+                    Vector2D Head, Foot;
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Head), Head);
+                    GameCamera->WorldToScreen(p->LocalOrigin.Add(Vector3D(0, 0, 0)), Foot);
+                    if (p->IsLockedOn)
+                    {
+                        Renderer::DrawBox(Canvas, Foot, Head, ImColor(255, 0, 0), 2);
+                    }
+                    else if (!p->IsLockedOn)
+                        Renderer::DrawBox(Canvas, Foot, Head, ImColor(255, 255, 255), 2);
+                }
+ 
+                if (Skelton && p->DistanceToLocalPlayer < (Conversion::ToGameUnits(ESPMaxDistance / 2)))
+                {
+                    ImColor SkeltonColor;
+                    SkeltonColor = ImColor(255, 255, 255);
+ 
+                    if (p->IsLockedOn)
+                    {
+                        SkeltonColor = ImColor(255, 0, 0);
+                    }
+ 
+                    Vector2D Head, Neck, UpperChest, LowerChest, Stomach, Leftshoulder, Leftelbow, LeftHand, Rightshoulder, RightelbowBone, RightHand, LeftThighs, Leftknees, Leftleg, RightThighs, Rightknees, Rightleg;
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Head), Head);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Neck), Neck);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::UpperChest), UpperChest);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::LowerChest), LowerChest);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Stomach), Stomach);
+ 
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftshoulder), Leftshoulder);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftelbow), Leftelbow);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::LeftHand), LeftHand);
+ 
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Rightshoulder), Rightshoulder);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::RightelbowBone), RightelbowBone);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::RightHand), RightHand);
+ 
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::LeftThighs), LeftThighs);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftknees), Leftknees);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Leftleg), Leftleg);
+ 
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::RightThighs), RightThighs);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Rightknees), Rightknees);
+                    GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Rightleg), Rightleg);
+ 
+                    // Renderer::DrawCircle(Canvas, Head, 10.0f, 10, SkeltonColor, SkeltonThickness);
+                    // Renderer::DrawCircleFilled(Canvas, Head, 2, 10, ImColor(255, 255, 255));
+ 
+                    Renderer::DrawLine(Canvas, Head, Neck, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, Neck, UpperChest, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, UpperChest, LowerChest, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, LowerChest, Stomach, SkeltonThickness, SkeltonColor);
+ 
+                    Renderer::DrawLine(Canvas, Neck, Leftshoulder, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, Leftshoulder, Leftelbow, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, Leftelbow, LeftHand, SkeltonThickness, SkeltonColor);
+ 
+                    Renderer::DrawLine(Canvas, Neck, Rightshoulder, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, Rightshoulder, RightelbowBone, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, RightelbowBone, RightHand, SkeltonThickness, SkeltonColor);
+ 
+                    Renderer::DrawLine(Canvas, Stomach, LeftThighs, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, LeftThighs, Leftknees, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, Leftknees, Leftleg, SkeltonThickness, SkeltonColor);
+ 
+                    Renderer::DrawLine(Canvas, Stomach, RightThighs, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, RightThighs, Rightknees, SkeltonThickness, SkeltonColor);
+                    Renderer::DrawLine(Canvas, Rightknees, Rightleg, SkeltonThickness, SkeltonColor);
                 }
             }
-
-            // Distance
-            if (DrawDistance) {
-                Vector2D originScreenPosition;
-                GameCamera->WorldToScreen(p->LocalOrigin.Add(Vector3D(0, 15, 0)), originScreenPosition);
-                if (!originScreenPosition.IsZeroVector()) {
-                    Renderer::DrawText(Canvas, originScreenPosition.Add(Vector2D(5, 0)), std::to_string((int)Conversion::ToMeters(p->DistanceToLocalPlayer)).c_str(), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), true, true, false);
-                }
-            }
-
+ 
+            if (!p->IsCombatReady() || !p->IsVisible || !p->IsHostile || p->DistanceToLocalPlayer > (Conversion::ToGameUnits(SeerMaxDistance)) || Myself->BasePointer == p->BasePointer)
+                continue;
+            // Tracer OLD HIRE
+ 
             // Seer
-            if (DrawSeer && !AimedAtOnly) {
+            if (DrawSeer && !AimedAtOnly)
+            {
                 Vector2D headScreenPosition;
                 GameCamera->WorldToScreen(p->GetBonePosition(HitboxType::Head), headScreenPosition);
                 if (!headScreenPosition.IsZeroVector())
                     Renderer::DrawSeer(Canvas, headScreenPosition.x, headScreenPosition.y - 20, p->Shield, p->MaxShield, p->Health);
             }
         }
-
+ 
+        if (ShowNear)
+        {
+            // Gui DrawText Version
+            Renderer::DrawText(Canvas, Vector2D(ScreenWidth * 0.5, ScreenHeight * 0.6), ("NEAR : " + std::to_string(PlayersNear)).c_str(), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), true, true, false);
+            // Gui Version
+            /*
+           ImVec2 Center = ImGui::GetMainViewport()->GetCenter();
+           ImGui::SetNextWindowPos(ImVec2(Center.x, Center.y * 1.2), ImGuiCond_Once, ImVec2(0.50f, 0.5f));
+           ImGui::SetNextWindowBgAlpha(0.3f);
+           ImGui::Begin("Near", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+           ImGui::Text("Near: ");
+           ImGui::SameLine();
+           ImGui::TextColored(PlayersNear > 0 ? ImVec4(0.4, 1, 0.343, 1) : ImVec4(1, 1, 1, 1), "%d", PlayersNear);
+           ImGui::End();
+           */
+        }
+        PlayersNear = 0;
         // Draw Seer on locked target
-        if (AimAssistState->TargetSelected && AimAssistState->CurrentTarget) {
+        if (AimAssistState->TargetSelected && AimAssistState->CurrentTarget)
+        {
             Vector2D headScreenPosition;
             GameCamera->WorldToScreen(AimAssistState->CurrentTarget->GetBonePosition(HitboxType::Head), headScreenPosition);
             if (headScreenPosition.IsZeroVector())
                 return;
-
+ 
             Renderer::DrawSeer(Canvas, headScreenPosition.x, headScreenPosition.y - 20, AimAssistState->CurrentTarget->Shield, AimAssistState->CurrentTarget->MaxShield, AimAssistState->CurrentTarget->Health);
             return;
         }
